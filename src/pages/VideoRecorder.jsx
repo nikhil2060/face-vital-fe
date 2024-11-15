@@ -9,6 +9,7 @@ import {
   XCircle,
   Warning,
   File,
+  FirstAid,
 } from "@phosphor-icons/react";
 import { useReport } from "../context/ReportContext";
 import TimerInstructions from "./TimerInstructions";
@@ -59,8 +60,8 @@ const Alert = ({ children, variant = "default" }) => {
 };
 
 const VideoRecorder = () => {
-  const apiUrl = "https://srt.actofit.com:3000";
-  // const apiUrl = 'http://localhost:3000';
+  // const apiUrl = "https://srt.actofit.com:3000";
+  const apiUrl = "http://localhost:3000";
 
   console.log(apiUrl);
   const navigate = useNavigate();
@@ -260,59 +261,26 @@ const VideoRecorder = () => {
       const result = await response.json();
       console.log("API Response:", result);
 
-      if (!response.ok || result.status === "error" || !result.success) {
-        // Handle error message from the server
+      if (!response.ok || !result.success) {
         const errorMessage =
           result.message || "Failed to process video. Please try again.";
         throw new Error(errorMessage);
       }
 
-      const reportId = result?.reportId;
+      // Set report data directly from the response
+      if (result.report) {
+        setReportData({
+          success: true,
+          data: result.report,
+        });
+        setIsUploading(false);
 
-      // Poll for data until it's available
-      let attempts = 0;
-      const maxAttempts = 10;
-      const pollInterval = 2000;
-
-      const getReportData = async () => {
-        try {
-          const dataResponse = await fetch(`${apiUrl}/api/report/${reportId}`);
-          const reportData = await dataResponse.json();
-
-          if (
-            reportData.success &&
-            reportData.data &&
-            Object.keys(reportData.data).length > 0
-          ) {
-            setReportData(reportData);
-            setIsUploading(false);
-            navigate(`/report/${reportId}`);
-            return true;
-          }
-          return false;
-        } catch (error) {
-          throw new Error(
-            "Failed to retrieve analysis results. Please try again."
-          );
-        }
-      };
-
-      const pollForData = async () => {
-        if (attempts >= maxAttempts) {
-          throw new Error(
-            "Analysis is taking longer than expected. Please try again."
-          );
-        }
-
-        const hasData = await getReportData();
-        if (!hasData) {
-          attempts++;
-          await new Promise((resolve) => setTimeout(resolve, pollInterval));
-          return pollForData();
-        }
-      };
-
-      await pollForData();
+        // Navigate to report page using the reportId from the metadata
+        const reportId = result.report.metadata.reportId;
+        navigate(`/report/${reportId}`);
+      } else {
+        throw new Error("Invalid response format: missing report data");
+      }
     } catch (err) {
       console.error("Upload error:", err);
       setError(err.message || "Failed to process video. Please try again.");
@@ -329,16 +297,28 @@ const VideoRecorder = () => {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-4xl space-y-6 rounded-2xl bg-white p-8 shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Record Your SRT Test
-          </h2>
-          <button
-            onClick={() => navigate("/")}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <XCircle size={24} weight="duotone" />
-          </button>
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-blue-100 p-3">
+              <FirstAid size={24} className="text-blue-600" weight="fill" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 md:text-3xl">
+                Vital Signs Analysis
+              </h2>
+              <p className="mt-1 text-gray-600">
+                Non-invasive health metrics through facial scanning
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="rounded-full p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600"
+            >
+              <XCircle size={24} weight="duotone" />
+            </button>
+          </div>
         </div>
 
         {/* Error Alert */}
@@ -370,10 +350,10 @@ const VideoRecorder = () => {
                 height={inputResolution.height}
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <TimerInstructions
+              {/* <TimerInstructions
                 recordingDuration={recordingDuration}
                 isRecording={isRecording}
-              />
+              /> */}
             </>
           ) : (
             <video

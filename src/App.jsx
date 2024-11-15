@@ -1,10 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import HomePage from "./pages/Homepage";
-import VideoRecorder from "./pages/VideoRecorder";
-import SRTReport from "./pages/SRTReport";
 import { ReportProvider } from "./context/ReportContext";
-import SRTReportPage from "./pages/SRTReport";
+import HomePage from "./pages/Homepage";
+
 import FaceMeshOverlay from "./pages/VideoRecorder";
+import VitalReportPage from "./pages/VitalReportPage";
 
 const App = () => {
   return (
@@ -13,7 +12,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/record" element={<FaceMeshOverlay />} />
-          <Route path="/report/:reportId" element={<SRTReportPage />} />
+          <Route path="/report/:reportId" element={<VitalReportPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
